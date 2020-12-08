@@ -40,7 +40,8 @@ def top_p_logits(logits, p):
 
 def sample_sequence(*, hparams, length, start_token=None,
                     batch_size=None, context=None, temperature=1,
-                    top_k=0, top_p=0.0):
+                    top_k=0, top_p=0.0, 
+                    return_attention=False):
     if start_token is None:
         assert context is not None, 'Specify exactly one of start_token and context!'
     else:
@@ -84,7 +85,7 @@ def sample_sequence(*, hparams, length, start_token=None,
         def cond(*args):
             return True
 
-        _, _, tokens = tf.while_loop(
+        attention, _, tokens = tf.while_loop(
             cond=cond, body=body,
             maximum_iterations=length,
             loop_vars=[
@@ -101,4 +102,7 @@ def sample_sequence(*, hparams, length, start_token=None,
             back_prop=False,
         )
 
-        return tokens
+        if return_attention:
+            return tokens, attention
+        else:
+            return tokens

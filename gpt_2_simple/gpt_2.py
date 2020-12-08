@@ -422,7 +422,8 @@ def generate(sess,
              temperature=0.7,
              top_k=0,
              top_p=0.0,
-             include_prefix=True):
+             include_prefix=True, 
+             return_attention=True):
     """Generates text from a model loaded into memory.
 
     Adapted from https://github.com/openai/gpt-2/blob/master/src/interactive_conditional_samples.py
@@ -455,14 +456,17 @@ def generate(sess,
     np.random.seed(seed)
     tf.compat.v1.set_random_seed(seed)
 
-    output = sample.sample_sequence(
+    output, attention = sample.sample_sequence(
         hparams=hparams,
         length=min(length, 1023 - (len(context_tokens) if prefix else 0)),
         start_token=enc.encoder['<|endoftext|>'] if not prefix else None,
         context=context if prefix else None,
         batch_size=batch_size,
-        temperature=temperature, top_k=top_k, top_p=top_p
-    )[:, 1:]
+        temperature=temperature, top_k=top_k, top_p=top_p,
+        return_attention=return_attention
+    )
+
+    output = output[:, 1:]
 
     if destination_path:
         f = open(destination_path, 'w')
@@ -503,7 +507,10 @@ def generate(sess,
         f.close()
 
     if return_as_list:
-        return gen_texts
+        if return_attention: 
+            return gen_texts, attention
+        else:
+            return gen_texts
 
 
 def generate_to_file(sess,
