@@ -506,11 +506,13 @@ def generate(sess,
     if destination_path:
         f.close()
 
+
+    if return_attention: 
+        return [enc.decoder[token] for token in out[0]], attention
+
+
     if return_as_list:
-        if return_attention: 
-            return gen_texts, attention
-        else:
-            return gen_texts
+        return gen_texts
 
 
 def generate_to_file(sess,
