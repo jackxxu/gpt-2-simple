@@ -85,7 +85,7 @@ def sample_sequence(*, hparams, length, start_token=None,
         def cond(*args):
             return True
 
-        attention, _, tokens = tf.while_loop(
+        past_n_present, _, tokens = tf.while_loop(
             cond=cond, body=body,
             maximum_iterations=length,
             loop_vars=[
@@ -103,6 +103,13 @@ def sample_sequence(*, hparams, length, start_token=None,
         )
 
         if return_attention:
+            # past_n_present should be in the dimension of
+            # [batch, layers, 2, heads, sequence, features]
+            past = past_n_present[:, :, :1, :, :, :]
+            present = past_n_present[:, :, 1:, :, :, :]
+            # compute the past and present attetntion
+            attention = tf.matmul(past/tf.cast(temperature, tf.float32), tf.transpose(present, perm=[0, 1, 2, 3, 5, 4]))
+            attention = tf.nn.softmax(attention, axis=-1)
             return tokens, attention
         else:
             return tokens
